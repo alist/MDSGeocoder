@@ -44,6 +44,7 @@
 - (IBAction) didLongPress:(UILongPressGestureRecognizer*)gr;
 - (void) addPinAnnotationForPlacemark:(CLPlacemark*)placemark;
 - (void) zoomMapToPlacemark:(CLPlacemark *)selectedPlacemark;
+-(void) setActivePlacemark:(CLPlacemark*)selectedPlacemark;
 @end
 
 @implementation MDSGeocodingViewController
@@ -55,7 +56,13 @@
 
 - (void) viewDidLoad {
   [super viewDidLoad];
+	
   
+	[self.searchDisplayController.searchBar setPlaceholder:NSLocalizedString(@"Custom Location", @"location name prompt on search bar")];
+	
+	[self setTitle:NSLocalizedString(@"Set Location", @"prompt for how to use location map")];
+	[self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Here!", @"Show user's current location on map") style:UIBarButtonItemStyleDone target:self action:@selector(currentLocationButtonPressed:)]];
+	
   _geocodingResults = [NSMutableArray array];
   _geocoder = [[CLGeocoder alloc] init];
 }
@@ -98,6 +105,7 @@ NSString * const kSearchTextKey = @"Search Text"; /*< NSDictionary key for enter
     CGPoint touchPoint = [gr locationInView:_mapView];
     CLLocationCoordinate2D coord = [_mapView convertPoint:touchPoint 
                                      toCoordinateFromView:_mapView];
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"GeoSetCustomUserLocation" object:self userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"location",[[CLLocation alloc] initWithCoordinate:coord altitude:0 horizontalAccuracy:0 verticalAccuracy:0 timestamp:nil], nil]];
     [self reverseGeocodeCoordinate:coord];
   }
 }
@@ -123,13 +131,8 @@ NSString * const kSearchTextKey = @"Search Text"; /*< NSDictionary key for enter
     return;
   
   CLPlacemark * placemark = [placemarks objectAtIndex:0];
-  NSString * alertMessage = ABCreateStringWithAddressDictionary(placemark.addressDictionary, NO); // requires AddressBookUI framework
-  UIAlertView * alert = [[UIAlertView alloc] initWithTitle:@"Geocode Complete"
-                                                   message:alertMessage
-                                                  delegate:nil
-                                         cancelButtonTitle:@"OK"
-                                         otherButtonTitles:nil];
-  [alert show];
+
+	[self setActivePlacemark:placemark];
 }
 
 - (void) addPinAnnotationForPlacemark:(CLPlacemark*)placemark {
@@ -143,11 +146,12 @@ NSString * const kSearchTextKey = @"Search Text"; /*< NSDictionary key for enter
   CLLocationCoordinate2D coordinate = selectedPlacemark.location.coordinate;
   MKMapPoint mapPoint = MKMapPointForCoordinate(coordinate);
   double radius = (MKMapPointsPerMeterAtLatitude(coordinate.latitude) * selectedPlacemark.region.radius)/2;
+	if (radius == 0)
+		radius = 10000;
   MKMapSize size = {radius, radius};
   MKMapRect mapRect = {mapPoint, size};
   mapRect = MKMapRectOffset(mapRect, -radius/2, -radius/2); // adjust the rect so the coordinate is in the middle
-  [_mapView setVisibleMapRect:mapRect
-                     animated:YES];
+  [_mapView setVisibleMapRect:mapRect animated:YES];
 }
 
 #pragma mark - UISearchDisplayController Delegate Methods
@@ -193,19 +197,42 @@ NSString * const kSearchTextKey = @"Search Text"; /*< NSDictionary key for enter
 }
 
 - (void) tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-  
-  // Clear the map
-  [_mapView removeAnnotations:_mapView.annotations];
-  
+    
   CLPlacemark * selectedPlacemark = [_geocodingResults objectAtIndex:indexPath.row];
 
-  [self addPinAnnotationForPlacemark:selectedPlacemark];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"GeoSetCustomUserLocation" object:self userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[selectedPlacemark location],@"location", nil]];
+	[self setActivePlacemark:selectedPlacemark];
+}
 
-  // hide the search display controller and reset the search results
-  [self.searchDisplayController setActive:NO animated:YES];
-  [_geocodingResults removeAllObjects];
+-(void) setActivePlacemark:(CLPlacemark*)selectedPlacemark{
+	[_mapView setShowsUserLocation:FALSE];
+		
+	// Clear the map
+	[_mapView removeAnnotations:_mapView.annotations];
+		
+	[self addPinAnnotationForPlacemark:selectedPlacemark];
+	
+	[self.searchDisplayController.searchBar setPlaceholder:[selectedPlacemark locality]];
+	
+	// hide the search display controller and reset the search results
+	[self.searchDisplayController setActive:NO animated:YES];
+	[_geocodingResults removeAllObjects];
+	
+	[self zoomMapToPlacemark:selectedPlacemark];
 
-  [self zoomMapToPlacemark:selectedPlacemark];
+}
+
+-(void)currentLocationButtonPressed:(id)sender{
+	[self.searchDisplayController.searchBar setPlaceholder:NSLocalizedString(@"Custom Location", @"location name prompt on search bar")];
+
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"GeoTrackActiveUserLocation" object:self userInfo:nil];
+	[_mapView removeAnnotations:_mapView.annotations];
+	[_mapView setUserTrackingMode:MKUserTrackingModeFollow];
+	[_mapView setShowsUserLocation:TRUE];
+}
+
+-(void) setCustomUserLocation:(CLLocation*)userLocation{
+	[self reverseGeocodeCoordinate:userLocation.coordinate];
 }
 
 #pragma mark - MKMapView Delegate Methods

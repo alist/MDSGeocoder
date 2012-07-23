@@ -32,6 +32,11 @@
   UITableViewDelegate, 
   MKMapViewDelegate >
 
+
+//call this after pushing the viewController to navigation controller if there's a custom location to appreciate
+-(void) setCustomUserLocation:(CLLocation*)userLocation;
+
+
 + (MDSGeocodingViewController*) viewController;
 
 @end
