@@ -223,16 +223,26 @@ NSString * const kSearchTextKey = @"Search Text"; /*< NSDictionary key for enter
 }
 
 -(void)currentLocationButtonPressed:(id)sender{
+	if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusDenied){
+		[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"enable location usage" , @"prompt when denied usage of current location in app and user wants current location") message:NSLocalizedString(@"see location in settings and enable TourBus", @"tells user where to look for setting") delegate:nil cancelButtonTitle:@"Okay" otherButtonTitles:nil]show];
+	}
+	
 	[self.searchDisplayController.searchBar setPlaceholder:NSLocalizedString(@"Custom Location", @"location name prompt on search bar")];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"GeoTrackActiveUserLocation" object:self userInfo:nil];
-	[_mapView removeAnnotations:_mapView.annotations];
-	[_mapView setUserTrackingMode:MKUserTrackingModeFollow];
-	[_mapView setShowsUserLocation:TRUE];
+
+	[self trackUserLocation];
 }
 
 -(void) setCustomUserLocation:(CLLocation*)userLocation{
-	[self reverseGeocodeCoordinate:userLocation.coordinate];
+	if (userLocation)
+		[self reverseGeocodeCoordinate:userLocation.coordinate];
+}
+
+-(void) trackUserLocation{
+	[_mapView removeAnnotations:_mapView.annotations];
+	[_mapView setUserTrackingMode:MKUserTrackingModeFollow];
+	[_mapView setShowsUserLocation:TRUE];
 }
 
 #pragma mark - MKMapView Delegate Methods
