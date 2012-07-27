@@ -131,6 +131,8 @@ NSString * const kSearchTextKey = @"Search Text"; /*< NSDictionary key for enter
     return;
   
   CLPlacemark * placemark = [placemarks objectAtIndex:0];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"GeoSetCustomUserLocation" object:self userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[placemark location],@"location", nil]];
+
 
 	[self setActivePlacemark:placemark];
 }
