@@ -61,7 +61,7 @@
 	[self.searchDisplayController.searchBar setPlaceholder:NSLocalizedString(@"Custom Location", @"location name prompt on search bar")];
 	
 	[self setTitle:NSLocalizedString(@"Set Location", @"prompt for how to use location map")];
-	[self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Here!", @"Show user's current location on map") style:UIBarButtonItemStyleDone target:self action:@selector(currentLocationButtonPressed:)]];
+	[self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Here!", @"Show user's current location on map") style:UIBarButtonItemStyleBordered target:self action:@selector(currentLocationButtonPressed:)]];
 	
   _geocodingResults = [NSMutableArray array];
   _geocoder = [[CLGeocoder alloc] init];
@@ -226,7 +226,7 @@ NSString * const kSearchTextKey = @"Search Text"; /*< NSDictionary key for enter
 
 -(void)currentLocationButtonPressed:(id)sender{
 	if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusDenied){
-		[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"enable location usage" , @"prompt when denied usage of current location in app and user wants current location") message:NSLocalizedString(@"see location in settings and enable TourBus", @"tells user where to look for setting") delegate:nil cancelButtonTitle:@"Okay" otherButtonTitles:nil]show];
+		[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"enable location usage" , @"prompt when denied usage of current location in app and user wants current location") message:NSLocalizedString(@"see location in settings and enable TourBus", @"tells user where to look for setting") delegate:nil cancelButtonTitle:NSLocalizedString(@"Okay", @"Accept button on error alert") otherButtonTitles:nil]show];
 	}
 	
 	[self.searchDisplayController.searchBar setPlaceholder:NSLocalizedString(@"Custom Location", @"location name prompt on search bar")];
